@@ -1,62 +1,85 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { Download, Loader2 } from "lucide-react"
-import Image from "next/image"
+import { useState } from "react";
+import { Download, Loader2 } from "lucide-react";
+import Image from "next/image";
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function YouTubeDownloader() {
-  const [url, setUrl] = useState("")
-  const [loading, setLoading] = useState(false)
+  const [url, setUrl] = useState("");
+  const [loading, setLoading] = useState(false);
   const [videoDetails, setVideoDetails] = useState<null | {
-    title: string
-    thumbnail: string
-    duration: string
-    author: string
-  }>(null)
-  const [error, setError] = useState("")
+    title: string;
+    thumbnail: string;
+    duration: string;
+    author: string;
+  }>(null);
+  const [error, setError] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    if (!url.trim() || (!url.includes("youtube.com/") && !url.includes("youtu.be/"))) {
-      setError("Please enter a valid YouTube URL")
-      return
+    if (
+      !url.trim() ||
+      (!url.includes("youtube.com/") && !url.includes("youtu.be/"))
+    ) {
+      setError("Please enter a valid YouTube URL");
+      return;
     }
 
-    setError("")
-    setLoading(true)
+    setError("");
+    setLoading(true);
 
     // Simulate API call to fetch video details
     setTimeout(() => {
-      setLoading(false)
+      setLoading(false);
       setVideoDetails({
         title: "How to Build a Next.js Application",
         thumbnail: "/placeholder.svg?height=720&width=1280",
         duration: "10:42",
         author: "Coding Tutorials",
-      })
-    }, 1500)
-  }
+      });
+    }, 1500);
+  };
 
   return (
     <div className="container max-w-3xl py-10 px-4 mx-auto">
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold mb-2">YouTube Video Downloader</h1>
-        <p className="text-muted-foreground">Enter a YouTube URL to download videos in various formats</p>
+        <h1 className="text-3xl font-bold mb-2">
+          FN7 YouTube Video Downloader
+        </h1>
+        <p className="text-muted-foreground">
+          Enter a YouTube URL to download videos in various formats
+        </p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Download YouTube Video</CardTitle>
-          <CardDescription>Paste the YouTube video URL and click "Analyze" to get download options</CardDescription>
+          <CardDescription>
+            Paste the YouTube video URL and click "Analyze" to get download
+            options
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -65,7 +88,7 @@ export default function YouTubeDownloader() {
                 type="text"
                 placeholder="https://www.youtube.com/watch?v=..."
                 value={url}
-                onChange={(e) => setUrl(e.target.value)}
+                onChange={e => setUrl(e.target.value)}
                 className="flex-1"
               />
               <Button type="submit" disabled={loading}>
@@ -102,8 +125,12 @@ export default function YouTubeDownloader() {
                   </div>
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-lg line-clamp-2">{videoDetails.title}</h3>
-                  <p className="text-muted-foreground text-sm mt-1">By {videoDetails.author}</p>
+                  <h3 className="font-semibold text-lg line-clamp-2">
+                    {videoDetails.title}
+                  </h3>
+                  <p className="text-muted-foreground text-sm mt-1">
+                    By {videoDetails.author}
+                  </p>
 
                   <div className="mt-4 space-y-3">
                     <div className="space-y-2">
@@ -151,6 +178,5 @@ export default function YouTubeDownloader() {
         </CardFooter>
       </Card>
     </div>
-  )
+  );
 }
-
