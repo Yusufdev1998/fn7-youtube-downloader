@@ -25,18 +25,38 @@ import {
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
+function formatTime(time: number) {
+  let hours = Math.trunc(time / 3600);
+  let minutes = Math.trunc((time - hours * 3600) / 60);
+  let seconds = time % 60;
+
+  let str = "";
+  if (hours) {
+    str += (hours < 10 ? `0${hours}` : hours) + ":";
+  }
+
+  str += (minutes < 10 ? `0${minutes}` : minutes) + ":";
+
+  str += seconds < 10 ? `0${seconds}` : seconds;
+  return str;
+}
+
 export default function YouTubeDownloader() {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
+  const [selectedURL, setSelectedURL] = useState("");
+
   const [videoDetails, setVideoDetails] = useState<null | {
     title: string;
     thumbnail: string;
     duration: string;
     author: string;
+    downloadLink: string;
+    availableResolutions: any[];
   }>(null);
   const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (
@@ -51,17 +71,45 @@ export default function YouTubeDownloader() {
     setLoading(true);
 
     // Simulate API call to fetch video details
-    setTimeout(() => {
-      setLoading(false);
-      setVideoDetails({
-        title: "How to Build a Next.js Application",
-        thumbnail: "/placeholder.svg?height=720&width=1280",
-        duration: "10:42",
-        author: "Coding Tutorials",
-      });
-    }, 1500);
+    const res = await fetch("http://localhost:8080/video", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        url: url,
+      }),
+    });
+    const data = await res.json();
+
+    setLoading(false);
+    setVideoDetails({
+      title: data.title,
+      thumbnail: data.thumbnail,
+      duration: formatTime(data.duration),
+      author: data.uploader,
+      downloadLink: "test",
+      availableResolutions: data.availableResolutions,
+    });
   };
 
+  const handleDownload = async () => {
+    if (selectedURL) {
+      const video_url = videoDetails?.availableResolutions.find(
+        t => t.name === selectedURL
+      )?.url;
+      await fetch("http://localhost:8080/download", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          youtube_url: url,
+          video_url: video_url,
+        }),
+      });
+    }
+  };
   return (
     <div className="container max-w-3xl py-10 px-4 mx-auto">
       <div className="text-center mb-8">
@@ -113,7 +161,7 @@ export default function YouTubeDownloader() {
           {videoDetails && (
             <div className="mt-6 space-y-6">
               <div className="flex flex-col md:flex-row gap-4">
-                <div className="relative aspect-video w-full md:w-1/2 rounded-lg overflow-hidden">
+                <div className="relative aspect-video w-full md:w-1/2 min-h-[200px] rounded-lg overflow-hidden">
                   <Image
                     src={videoDetails.thumbnail || "/placeholder.svg"}
                     alt={videoDetails.title}
@@ -149,15 +197,25 @@ export default function YouTubeDownloader() {
 
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Quality</label>
-                      <Select defaultValue="720p">
+                      <Select
+                        defaultValue="720p (HD)"
+                        value={selectedURL}
+                        onValueChange={setSelectedURL}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select quality" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="1080p">1080p HD</SelectItem>
-                          <SelectItem value="720p">720p HD</SelectItem>
-                          <SelectItem value="480p">480p</SelectItem>
-                          <SelectItem value="360p">360p</SelectItem>
+                          {videoDetails?.availableResolutions.map(
+                            (resolution: any) => (
+                              <SelectItem
+                                key={resolution.name}
+                                value={resolution.name}
+                              >
+                                {resolution.name}
+                              </SelectItem>
+                            )
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
@@ -165,7 +223,7 @@ export default function YouTubeDownloader() {
                 </div>
               </div>
 
-              <Button className="w-full">
+              <Button onClick={handleDownload} className="w-full">
                 <Download className="mr-2 h-4 w-4" />
                 Download Now
               </Button>
