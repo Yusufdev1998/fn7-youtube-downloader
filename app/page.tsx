@@ -26,6 +26,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 function formatTime(time: number) {
+  time = Math.trunc(time);
   let hours = Math.trunc(time / 3600);
   let minutes = Math.trunc((time - hours * 3600) / 60);
   let seconds = time % 60;
@@ -44,7 +45,8 @@ function formatTime(time: number) {
 export default function YouTubeDownloader() {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
-  const [selectedURL, setSelectedURL] = useState("");
+  const [selectedURL, setSelectedURL] = useState("720p (HD)");
+  const [videoLoading, setVideoLoading] = useState(false);
 
   const [videoDetails, setVideoDetails] = useState<null | {
     title: string;
@@ -59,13 +61,13 @@ export default function YouTubeDownloader() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (
-      !url.trim() ||
-      (!url.includes("youtube.com/") && !url.includes("youtu.be/"))
-    ) {
-      setError("Please enter a valid YouTube URL");
-      return;
-    }
+    // if (
+    //   !url.trim() ||
+    //   (!url.includes("youtube.com/") && !url.includes("youtu.be/"))
+    // ) {
+    //   setError("Please enter a valid YouTube URL");
+    //   return;
+    // }
 
     setError("");
     setLoading(true);
@@ -95,10 +97,11 @@ export default function YouTubeDownloader() {
 
   const handleDownload = async () => {
     if (selectedURL) {
+      setVideoLoading(true);
       const video_url = videoDetails?.availableResolutions.find(
         t => t.name === selectedURL
       )?.url;
-      await fetch("http://localhost:8080/download", {
+      const res = await fetch("http://localhost:8080/download", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -108,6 +111,17 @@ export default function YouTubeDownloader() {
           video_url: video_url,
         }),
       });
+      const blob = await res.blob();
+      const fileUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = fileUrl;
+      a.download = videoDetails?.title + ".mp4"; // or get from response headers
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(fileUrl);
+
+      setVideoLoading(false);
     }
   };
   return (
@@ -198,7 +212,6 @@ export default function YouTubeDownloader() {
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Quality</label>
                       <Select
-                        defaultValue="720p (HD)"
                         value={selectedURL}
                         onValueChange={setSelectedURL}
                       >
@@ -223,17 +236,27 @@ export default function YouTubeDownloader() {
                 </div>
               </div>
 
-              <Button onClick={handleDownload} className="w-full">
-                <Download className="mr-2 h-4 w-4" />
-                Download Now
+              <Button
+                onClick={handleDownload}
+                disabled={videoLoading}
+                className="w-full"
+              >
+                {videoLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Downloading...
+                  </>
+                ) : (
+                  <>
+                    <Download className="mr-2 h-4 w-4" />
+                    Download Now
+                  </>
+                )}
               </Button>
             </div>
           )}
         </CardContent>
-        <CardFooter className="flex justify-between text-xs text-muted-foreground">
-          <p>This is a demo interface only</p>
-          <p>No videos are actually downloaded</p>
-        </CardFooter>
+        <CardFooter className="flex justify-between text-xs text-muted-foreground"></CardFooter>
       </Card>
     </div>
   );
